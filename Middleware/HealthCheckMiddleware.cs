@@ -10,6 +10,7 @@ using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Options;
 using Microsoft.Net.Http.Headers;
 using Newtonsoft.Json;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace HealthCheckApp.Middleware
 {
@@ -63,6 +64,7 @@ namespace HealthCheckApp.Middleware
             // Get results
             var reports = _storage.GetStatuses();
 
+            httpContext.Response.ContentType = Application.Json;
             httpContext.Response.StatusCode = (int)GetHttpStatusCode(reports.Select(x => x.Value.Status));
             await httpContext.Response.WriteAsync(JsonConvert.SerializeObject(
                 new 
@@ -77,15 +79,6 @@ namespace HealthCheckApp.Middleware
                     })
                 }
             ));
-
-            if (!_healthCheckOptions.AllowCachingResponses)
-            {
-                // Similar to: https://github.com/aspnet/Security/blob/7b6c9cf0eeb149f2142dedd55a17430e7831ea99/src/Microsoft.AspNetCore.Authentication.Cookies/CookieAuthenticationHandler.cs#L377-L379
-                var headers = httpContext.Response.Headers;
-                headers[HeaderNames.CacheControl] = "no-store, no-cache";
-                headers[HeaderNames.Pragma] = "no-cache";
-                headers[HeaderNames.Expires] = "Thu, 01 Jan 1970 00:00:00 GMT";
-            }
         }
 
         private HttpStatusCode GetHttpStatusCode(IEnumerable<HealthStatus> reports)

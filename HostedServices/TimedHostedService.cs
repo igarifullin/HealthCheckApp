@@ -2,6 +2,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using HealthCheckApp.Services;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
@@ -16,11 +17,18 @@ namespace HealthCheckApp.HostedServices
         private readonly IHealthCheckMonitor _healthCheckMonitor;
         private Timer _timer;
 
+        private TimeSpan _backgroundJobPeriod;
+
         public TimedHostedService(ILogger<TimedHostedService> logger,
-            IHealthCheckMonitor healthCheckMonitor)
+            IHealthCheckMonitor healthCheckMonitor,
+            IConfiguration configuration)
         {
             _logger = logger;
             _healthCheckMonitor = healthCheckMonitor;
+            if (!TimeSpan.TryParse(configuration["backgroundJobPeriod"], out _backgroundJobPeriod))
+            {
+                throw new ArgumentException("Invalid TimeSpan format", nameof(_backgroundJobPeriod));
+            }
         }
 
         /// <inheritdoc cref="IHostedService"/>
@@ -28,7 +36,7 @@ namespace HealthCheckApp.HostedServices
         {
             _logger.LogInformation("Timed Background Service is starting.");
 
-            _timer = new Timer(DoWork, cancellationToken, TimeSpan.Zero, TimeSpan.FromSeconds(5));
+            _timer = new Timer(DoWork, cancellationToken, TimeSpan.Zero, _backgroundJobPeriod);
 
             return Task.CompletedTask;
         }

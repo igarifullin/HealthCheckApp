@@ -72,7 +72,7 @@ namespace HealthCheckApp
                     template: "{controller=Home}/{action=Index}/{id?}");
             });
 
-            app.UseMiddleware<HealthCheckMiddleware>();
+            app.UseMiddleware<HealthCheckMiddleware>("/healthcheck");
         }
     }
 }
